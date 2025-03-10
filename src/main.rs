@@ -154,6 +154,8 @@ fn orbit_camera_system(
 fn rotate_cube(mut cubes: Query<(&mut Transform, &Rotatable)>, timer: Res<Time>) {
     for (mut transform, cube) in &mut cubes {
         transform.rotate_y(cube.speed * TAU * timer.delta_secs());
+        transform.rotate_x(cube.speed * TAU * timer.delta_secs());
+        transform.rotate_z(cube.speed * TAU * timer.delta_secs());
     }
 }
 
