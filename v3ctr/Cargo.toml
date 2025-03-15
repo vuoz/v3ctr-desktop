@@ -1,0 +1,18 @@
+[package]
+name = "v3ctr"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["rlib", "dylib"]
+
+
+[dependencies]
+bevy = "0.15.3"
+bevy_dylib = "0.15.3"
+components = { path = "../components" }
+
+
+[features]
+default = []
+dynamic = ["bevy/dynamic_linking", "components/dynamic"]
