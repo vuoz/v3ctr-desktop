@@ -1,5 +1,5 @@
 use bevy::asset::RenderAssetUsages;
-use bevy::input::mouse::MouseMotion;
+use bevy::input::mouse::AccumulatedMouseMotion;
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use bevy::render::mesh::PrimitiveTopology;
@@ -123,12 +123,50 @@ pub fn spawn_plane(
 #[no_mangle]
 pub fn orbit_camera_system(
     mouse_button_input: Res<ButtonInput<bevy::input::mouse::MouseButton>>,
-    mut move_ev: EventReader<MouseMotion>,
+    accumulated_mouse_motion: Res<AccumulatedMouseMotion>,
     mut query: Query<(&mut OrbitCamera, &mut Transform)>,
 ) {
-    if mouse_button_input.pressed(bevy::input::mouse::MouseButton::Left) {
-        println!("left pressed");
+    let delta = accumulated_mouse_motion.delta;
+    for (mut orbit, mut transform) in query.iter_mut() {
+        let mut modified = false;
+        if mouse_button_input
+            .get_pressed()
+            .any(|btn| *btn == MouseButton::Right)
+        {
+            orbit.yaw -= delta.x * 0.005;
+            orbit.pitch -= delta.y * 0.005;
+            orbit.pitch = orbit.pitch.clamp(-1.5, 1.5);
+            modified = true;
+        }
+
+        if mouse_button_input
+            .get_pressed()
+            .any(|btn| *btn == MouseButton::Middle)
+        {
+            let pan_speed = 0.05;
+            orbit.target += transform.right() * -delta.x * pan_speed;
+            orbit.target += transform.up() * delta.y * pan_speed;
+            modified = true;
+        }
+
+        if modified {
+            let rotation = Quat::from_axis_angle(Vec3::Y, orbit.yaw)
+                * Quat::from_axis_angle(Vec3::X, orbit.pitch);
+            transform.translation = orbit.target + rotation * Vec3::new(0.0, 0.0, orbit.distance);
+            transform.look_at(orbit.target, Vec3::Y);
+        }
     }
+    // mouse_button_input.pressed(bevy::input::mouse::MouseButton::Left) wont work since we are
+    // comparing enum values and that somehow does not work with the dynamic linking;
+    // once we do actual memory comparison it works
+    // will change this to the .press(..) approach once I will package the project
+
+    // as mentioned this won't work, because of dynamic linking
+    /*
+        if mouse_button_input.pressed(bevy::input::mouse::MouseButton::Left) {
+            println!("left pressed");
+        }
+    */
 }
 
 #[no_mangle]
@@ -150,6 +188,5 @@ pub fn setup(
     spawn_cube(&mut commands, &mut meshes, &mut materials);
     spawn_axes(&mut commands, &mut meshes, &mut materials);
     spawn_plane(&mut commands, &mut meshes, &mut materials);
-    println!("setup done");
     println!("from v3ctr: {:?}", TypeId::of::<MouseButton>());
 }

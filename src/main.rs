@@ -10,6 +10,7 @@ use v3ctr_hot::*;
 #[cfg(feature = "reload")]
 #[hot_lib_reloader::hot_module(dylib = "v3ctr")]
 mod v3ctr_hot {
+    use bevy::input::mouse::AccumulatedMouseMotion;
     use bevy::input::mouse::MouseMotion;
     use bevy::input::mouse::MouseWheel;
     use bevy::prelude::*;

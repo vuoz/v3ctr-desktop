@@ -10,7 +10,10 @@ crate-type = ["rlib", "dylib"]
 
 
 [dependencies]
-bevy = { version = "0.15.3" }
+bevy = { version = "0.15.3" , features = ["dynamic_linking"]}
+
+
+
 bevy_dylib = "0.15.3"
 
 [features]
