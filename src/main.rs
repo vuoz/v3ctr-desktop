@@ -37,7 +37,7 @@ fn spawn_cube(
             base_color: bevy::color::Color::hsl(323.0, 1.0, 0.45),
             ..Default::default()
         })),
-        Rotatable { speed: 0.2 },
+        Rotatable { speed: 0.4 },
     ));
 }
 fn spawn_axes(
@@ -87,10 +87,10 @@ fn camera_zoom_system(
         scroll_amount += ev.y;
     }
     if scroll_amount.abs() > 0.0 {
-        if let Ok(mut projection) = query.get_single_mut() {
+        if let Ok(mut projection) = query.single_mut() {
             if let Projection::Perspective(ref mut perspective) = *projection {
                 perspective.fov -= scroll_amount * 0.05;
-                perspective.fov = perspective.fov.clamp(0.1, std::f32::consts::PI / 2.0);
+                perspective.fov = perspective.fov.clamp(0.1, std::f32::consts::PI);
             }
         }
     }
@@ -101,6 +101,7 @@ struct OrbitCamera {
     distance: f32,
     yaw: f32,
     pitch: f32,
+    pan_speed: f32,
 }
 
 impl Default for OrbitCamera {
@@ -110,6 +111,7 @@ impl Default for OrbitCamera {
             distance: 10.0,
             yaw: 0.0,
             pitch: 0.0,
+            pan_speed: 0.01,
         }
     }
 }
@@ -138,11 +140,21 @@ fn orbit_camera_system(
     mut query: Query<(&mut OrbitCamera, &mut Transform)>,
 ) {
     for (mut orbit, mut transform) in query.iter_mut() {
-        if mouse_button_input.pressed(MouseButton::Left) {
-            let delta = accumulated_mouse_motion.delta;
+        let delta = accumulated_mouse_motion.delta;
+
+        if mouse_button_input.pressed(MouseButton::Right) {
             orbit.yaw -= delta.x * 0.005;
             orbit.pitch -= delta.y * 0.005;
             orbit.pitch = orbit.pitch.clamp(-1.5, 1.5);
+        }
+        if mouse_button_input.pressed(MouseButton::Middle) {
+            let camera_right = transform.right();
+            let camera_up = transform.up();
+
+            let pan_vector =
+                camera_right * -delta.x * orbit.pan_speed + camera_up * -delta.y * orbit.pan_speed;
+
+            orbit.target += pan_vector;
         }
         let rotation =
             Quat::from_axis_angle(Vec3::Y, orbit.yaw) * Quat::from_axis_angle(Vec3::X, orbit.pitch);
